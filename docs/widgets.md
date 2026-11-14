@@ -1,11 +1,11 @@
 # Widgets
 
-The Pilot SDK provides a declarative UI system for building remote debug panels.
+The OpButton SDK provides a declarative UI system for building remote debug panels.
 
 ## Overview
 
 ```swift
-let ui = Pilot.getUI()
+let ui = OpButton.getUI()
 let tab = ui.addTab("Game Controls")
 let root = tab.vertical()
 
@@ -23,7 +23,7 @@ root.addStat("FPS")
 Each module/service creates its own tab:
 
 ```swift
-let tab = Pilot.getUI().addTab("My Tab")
+let tab = OpButton.getUI().addTab("My Tab")
 
 // Set a custom id
 tab.setId("my-custom-tab-id")
@@ -75,7 +75,7 @@ root.addButton("Click Me")
     .disabled(false)
     .onClick { action in
         handleClick()
-        Pilot.acknowledgeAction(action.id)
+        OpButton.acknowledgeAction(action.id)
     }
 ```
 
@@ -194,20 +194,20 @@ The SDK polls providers on each cycle and only sends changes.
 ```swift
 root.addButton("Restart").onClick { action in
     restartGame()
-    Pilot.acknowledgeAction(action.id)
+    OpButton.acknowledgeAction(action.id)
 }
 ```
 
 ### Global Action Listener
 
 ```swift
-class MyActionHandler: PilotActionListener {
-    func onPilotActionReceived(_ action: PilotAction) {
+class MyActionHandler: OpButtonActionListener {
+    func onOpButtonActionReceived(_ action: OpButtonAction) {
         print("Action: \(action.actionType) on widget \(action.widgetId)")
     }
 }
 
-Pilot.addActionListener(MyActionHandler())
+OpButton.addActionListener(MyActionHandler())
 ```
 
 ## Action Types
@@ -225,8 +225,8 @@ Pilot.addActionListener(MyActionHandler())
 ## Acknowledging Actions
 
 ```swift
-Pilot.acknowledgeAction(action.id)
+OpButton.acknowledgeAction(action.id)
 
 // With response payload
-Pilot.acknowledgeAction(action.id, ["result": "success", "value": 42])
+OpButton.acknowledgeAction(action.id, ["result": "success", "value": 42])
 ```

@@ -7,24 +7,24 @@
 ```ruby
 source "https://cdn.cocoapods.org/"
 source "https://github.com/livekit/podspecs.git"
-source "https://github.com/irov/swiftpilot-podspecs.git"
+source "https://github.com/opbutton-org/opbutton-sdk-swift-podspecs.git"
 
 platform :ios, "13.0"
 
 target "MyApp" do
-    pod "PilotSDK", "~> 1.0"
+    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :branch => "main"
 end
 ```
 
-`PilotSDK` still pulls `LiveKitClient` `2.12.1` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
-All three `source` entries are required: `PilotSDK` is published in `irov/swiftpilot-podspecs`, while recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of CocoaPods trunk.
+`OpButtonSDK` still pulls `LiveKitClient` `2.13.0` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
+The SDK is currently installed directly from this repository. The legacy CocoaPods spec publisher has been retired; SwiftPods packaging will be configured separately. The LiveKit spec source is still required.
 
 ## Basic Setup
 
 ### 1. Import
 
 ```swift
-import PilotSDK
+import OpButtonSDK
 ```
 
 ### 2. Initialize
@@ -32,12 +32,12 @@ import PilotSDK
 Initialize the SDK as early as possible (e.g., in `AppDelegate.application(_:didFinishLaunchingWithOptions:)` or your app's `@main` entry):
 
 ```swift
-let config = PilotConfig.Builder("https://pilot.example.com", "plt_your_api_token")
+let config = OpButtonConfig.Builder("https://opbutton.example.com", "opbutton_your_api_token")
     .setDeviceId("my-device-id")
     .setDeviceName("iPhone 15 Pro (iOS 17.2)")
     .build()
 
-Pilot.initialize(config)
+OpButton.initialize(config)
 ```
 
 If `deviceId` or `deviceName` are not set, the SDK auto-detects them from `UIDevice`.
@@ -55,14 +55,14 @@ By default `autoConnect` is `true` — the SDK connects immediately after `initi
 To connect manually:
 
 ```swift
-let config = PilotConfig.Builder(url, token)
+let config = OpButtonConfig.Builder(url, token)
     .setAutoConnect(false)
     .build()
 
-Pilot.initialize(config)
+OpButton.initialize(config)
 
 // Later, when ready:
-Pilot.connect()
+OpButton.connect()
 ```
 
 ## Session Attributes
@@ -70,14 +70,14 @@ Pilot.connect()
 Attach static and dynamic attributes to the session:
 
 ```swift
-let attrs = PilotSessionAttributes()
+let attrs = OpButtonSessionAttributes()
     .put("app_version", Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "")
     .put("build_number", Bundle.main.infoDictionary?["CFBundleVersion"] as? String ?? "")
     .put("install_id", installId)
     .putProvider("current_level") { gameState.currentLevel }
     .putProvider("player_coins") { gameState.coins }
 
-let config = PilotConfig.Builder(url, token)
+let config = OpButtonConfig.Builder(url, token)
     .setSessionAttributes(attrs)
     .build()
 ```
@@ -95,7 +95,7 @@ let config = PilotConfig.Builder(url, token)
 ## Session Status
 
 ```swift
-let status = Pilot.getStatus()
+let status = OpButton.getStatus()
 // .disconnected, .connecting, .waitingApproval, .active,
 // .authFailed, .rejected, .closed, .error
 ```
@@ -103,53 +103,53 @@ let status = Pilot.getStatus()
 ## Session Lifecycle Listener
 
 ```swift
-class MyListener: PilotSessionListener {
-    func onPilotSessionConnecting() {
+class MyListener: OpButtonSessionListener {
+    func onOpButtonSessionConnecting() {
         print("SDK is connecting to the server")
     }
 
-    func onPilotSessionWaitingApproval(_ requestId: String) {
+    func onOpButtonSessionWaitingApproval(_ requestId: String) {
         print("Waiting for dashboard approval: \(requestId)")
     }
 
-    func onPilotSessionStarted(_ sessionToken: String) {
+    func onOpButtonSessionStarted(_ sessionToken: String) {
         print("Session is active!")
     }
 
-    func onPilotSessionClosed() {
+    func onOpButtonSessionClosed() {
         print("Session closed")
     }
 
-    func onPilotSessionRejected() {
+    func onOpButtonSessionRejected() {
         print("Connection rejected by dashboard user")
     }
 
-    func onPilotSessionAuthFailed() {
+    func onOpButtonSessionAuthFailed() {
         print("API token is invalid (HTTP 401)")
     }
 
-    func onPilotSessionError(_ error: PilotError) {
+    func onOpButtonSessionError(_ error: OpButtonError) {
         print("Error: \(error.message)")
     }
 }
 
 // Register via config
-let config = PilotConfig.Builder(url, token)
+let config = OpButtonConfig.Builder(url, token)
     .setSessionListener(MyListener())
     .build()
 
 // Or add/remove at runtime
-Pilot.addSessionListener(listener)
-Pilot.removeSessionListener(listener)
+OpButton.addSessionListener(listener)
+OpButton.removeSessionListener(listener)
 ```
 
 ## Disconnect & Shutdown
 
 ```swift
 // Disconnect but keep SDK alive (can reconnect later)
-Pilot.disconnect()
+OpButton.disconnect()
 
 // Full shutdown — releases all resources
 // After this, initialize() can be called again
-Pilot.shutdown()
+OpButton.shutdown()
 ```

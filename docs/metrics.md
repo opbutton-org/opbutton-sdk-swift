@@ -3,13 +3,13 @@
 ## Configuration
 
 ```swift
-let metricConfig = PilotMetricConfig()
+let metricConfig = OpButtonMetricConfig()
     .setEnabled(true)
     .setSampleIntervalMs(200)    // How often collectors are polled (100–1000ms, default: 200)
     .setBufferSize(2000)         // Max buffered entries (default: 2000)
     .setBatchSize(200)           // Max entries per request (default: 200)
 
-let config = PilotConfig.Builder(url, token)
+let config = OpButtonConfig.Builder(url, token)
     .setMetricConfig(metricConfig)
     .build()
 ```
@@ -44,9 +44,9 @@ When metrics are enabled, the SDK automatically collects:
 ## Custom Metric Types
 
 ```swift
-let drawCalls = PilotMetricType.create("draw_calls")
-let errors = PilotMetricType.create("errors", unit: "", aggregation: .counter)
-let latency = PilotMetricType.create("request_latency", unit: "ms", aggregation: .gauge)
+let drawCalls = OpButtonMetricType.create("draw_calls")
+let errors = OpButtonMetricType.create("errors", unit: "", aggregation: .counter)
+let latency = OpButtonMetricType.create("request_latency", unit: "ms", aggregation: .gauge)
 ```
 
 ## Aggregation Modes
@@ -60,7 +60,7 @@ let latency = PilotMetricType.create("request_latency", unit: "ms", aggregation:
 ## Manual Recording
 
 ```swift
-let metrics = Pilot.getMetrics()
+let metrics = OpButton.getMetrics()
 
 metrics.record(.fps, 60.0)
 metrics.record(.memory, Double(processMemory))
@@ -75,29 +75,29 @@ metrics.record(.cpuUsage, 45.2, timestampMs: Int64(Date().timeIntervalSince1970 
 Collectors are called automatically at the configured sample interval:
 
 ```swift
-class GameMetrics: PilotMetricCollector {
-    func collect(_ out: inout [PilotMetricEntry]) {
-        out.append(PilotMetricEntry(.fps, Double(game.currentFps)))
-        out.append(PilotMetricEntry(.drawCalls, Double(renderer.drawCalls)))
+class GameMetrics: OpButtonMetricCollector {
+    func collect(_ out: inout [OpButtonMetricEntry]) {
+        out.append(OpButtonMetricEntry(.fps, Double(game.currentFps)))
+        out.append(OpButtonMetricEntry(.drawCalls, Double(renderer.drawCalls)))
 
-        let customType = PilotMetricType.create("active_particles")
-        out.append(PilotMetricEntry(customType, Double(particleSystem.activeCount)))
+        let customType = OpButtonMetricType.create("active_particles")
+        out.append(OpButtonMetricEntry(customType, Double(particleSystem.activeCount)))
     }
 }
 
 // Register via config
-let metricConfig = PilotMetricConfig()
+let metricConfig = OpButtonMetricConfig()
     .addCollector(GameMetrics())
 
 // Or at runtime
-Pilot.getMetrics().addCollector(GameMetrics())
-Pilot.getMetrics().removeCollector(myCollector)
+OpButton.getMetrics().addCollector(GameMetrics())
+OpButton.getMetrics().removeCollector(myCollector)
 ```
 
 ## Runtime Settings
 
 ```swift
-let metrics = Pilot.getMetrics()
+let metrics = OpButton.getMetrics()
 metrics.setSampleIntervalMs(500)
 metrics.setBufferSize(5000)
 metrics.setBatchSize(100)

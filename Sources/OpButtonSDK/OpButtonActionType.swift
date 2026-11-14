@@ -1,0 +1,17 @@
+import Foundation
+
+public enum OpButtonActionType: String, Sendable {
+    case click = "click"
+    case change = "change"
+    case toggle = "toggle"
+    case liveStart = "live_start"
+    case liveStop = "live_stop"
+    case liveUpdate = "live_update"
+    case liveTap = "live_tap"
+    case liveLongPress = "live_long_press"
+    case unknown = ""
+
+    public static func from(_ value: String) -> OpButtonActionType {
+        return OpButtonActionType(rawValue: value) ?? .unknown
+    }
+}

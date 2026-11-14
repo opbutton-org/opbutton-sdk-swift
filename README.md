@@ -1,6 +1,6 @@
-# Pilot SDK for iOS
+# OpButton SDK for iOS
 
-Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote debug dashboard.
+Lightweight Swift SDK for connecting iOS applications to the **OpButton** remote debug dashboard.
 
 ## Features
 
@@ -23,34 +23,34 @@ Lightweight Swift SDK for connecting iOS applications to the **Pilot** remote de
 ```ruby
 source "https://cdn.cocoapods.org/"
 source "https://github.com/livekit/podspecs.git"
-source "https://github.com/irov/swiftpilot-podspecs.git"
+source "https://github.com/opbutton-org/opbutton-sdk-swift-podspecs.git"
 
 platform :ios, "13.0"
 
 target "MyApp" do
-    pod "PilotSDK", "~> 1.0"
+    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :branch => "main"
 end
 ```
 
-`PilotSDK` still installs `LiveKitClient` `2.12.1` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
-All three `source` entries are required: `PilotSDK` is published in `irov/swiftpilot-podspecs`, while recent LiveKit CocoaPods specs are published in the LiveKit spec repo instead of trunk.
+`OpButtonSDK` still installs `LiveKitClient` `2.13.0` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
+The SDK is currently installed directly from this repository. The legacy CocoaPods spec publisher has been retired; SwiftPods packaging will be configured separately. The LiveKit spec source is still required.
 
 ## Quick Start
 
 ```swift
-import PilotSDK
+import OpButtonSDK
 
 // 1. Configure
-let config = PilotConfig.Builder("https://pilot.example.com", "plt_your_token")
+let config = OpButtonConfig.Builder("https://opbutton.example.com", "opbutton_your_token")
     .setDeviceId("my-device")
     .setDeviceName("iPhone 15 (iOS 17)")
     .build()
 
 // 2. Initialize
-Pilot.initialize(config)
+OpButton.initialize(config)
 
 // 3. Build UI
-let ui = Pilot.getUI()
+let ui = OpButton.getUI()
 let tab = ui.addTab("Controls")
 let root = tab.vertical()
 
@@ -65,34 +65,34 @@ root.addStat("FPS")
     .valueProvider { String(game.fps) }
 
 // 4. Send logs
-Pilot.log(.info, "Game started")
+OpButton.log(.info, "Game started")
 
 // 5. Track events
-Pilot.event("level_completed", metadata: ["level": 5, "score": 1200])
+OpButton.event("level_completed", metadata: ["level": 5, "score": 1200])
 
 // 6. Shutdown on exit
-Pilot.shutdown()
+OpButton.shutdown()
 ```
 
 ## Configuration
 
 ```swift
-let logConfig = PilotLogConfig()
+let logConfig = OpButtonLogConfig()
     .setEnabled(true)
     .setLogLevel(.info)
-    .setAttributes(PilotLogAttributes()
+    .setAttributes(OpButtonLogAttributes()
         .put("app_version", "1.0.0")
         .putProvider("screen_name") { currentScreen })
 
-let metricConfig = PilotMetricConfig()
+let metricConfig = OpButtonMetricConfig()
     .setEnabled(true)
     .setSampleIntervalMs(200)
 
-let sessionAttrs = PilotSessionAttributes()
+let sessionAttrs = OpButtonSessionAttributes()
     .put("install_id", installId)
     .putProvider("level") { currentLevel }
 
-let config = PilotConfig.Builder("https://pilot.example.com", "plt_token")
+let config = OpButtonConfig.Builder("https://opbutton.example.com", "opbutton_token")
     .setLogConfig(logConfig)
     .setMetricConfig(metricConfig)
     .setSessionAttributes(sessionAttrs)
@@ -104,30 +104,30 @@ let config = PilotConfig.Builder("https://pilot.example.com", "plt_token")
 
 | Widget | Description |
 |--------|-------------|
-| `PilotButton` | Button with click callback |
-| `PilotLabel` | Text label with optional auto-update |
-| `PilotStat` | Numeric value with label and unit |
-| `PilotSwitch` | Toggle switch |
-| `PilotInput` | Text input field |
-| `PilotSelect` | Dropdown selection |
-| `PilotTextarea` | Multi-line text input |
-| `PilotTable` | Data table (read-only) |
-| `PilotLogs` | Log output display |
+| `OpButtonButton` | Button with click callback |
+| `OpButtonLabel` | Text label with optional auto-update |
+| `OpButtonStat` | Numeric value with label and unit |
+| `OpButtonSwitch` | Toggle switch |
+| `OpButtonInput` | Text input field |
+| `OpButtonSelect` | Dropdown selection |
+| `OpButtonTextarea` | Multi-line text input |
+| `OpButtonTable` | Data table (read-only) |
+| `OpButtonLogs` | Log output display |
 
 ## Session Lifecycle
 
 ```swift
-class MySessionHandler: PilotSessionListener {
-    func onPilotSessionConnecting() { print("Connecting...") }
-    func onPilotSessionWaitingApproval(_ requestId: String) { print("Waiting approval") }
-    func onPilotSessionStarted(_ token: String) { print("Session active!") }
-    func onPilotSessionClosed() { print("Session closed") }
-    func onPilotSessionRejected() { print("Rejected") }
-    func onPilotSessionAuthFailed() { print("Auth failed") }
-    func onPilotSessionError(_ error: PilotError) { print("Error: \(error.message)") }
+class MySessionHandler: OpButtonSessionListener {
+    func onOpButtonSessionConnecting() { print("Connecting...") }
+    func onOpButtonSessionWaitingApproval(_ requestId: String) { print("Waiting approval") }
+    func onOpButtonSessionStarted(_ token: String) { print("Session active!") }
+    func onOpButtonSessionClosed() { print("Session closed") }
+    func onOpButtonSessionRejected() { print("Rejected") }
+    func onOpButtonSessionAuthFailed() { print("Auth failed") }
+    func onOpButtonSessionError(_ error: OpButtonError) { print("Error: \(error.message)") }
 }
 
-Pilot.addSessionListener(MySessionHandler())
+OpButton.addSessionListener(MySessionHandler())
 ```
 
 ## Metrics
@@ -140,14 +140,14 @@ Built-in metrics collected automatically:
 Add custom collectors:
 
 ```swift
-class GameMetrics: PilotMetricCollector {
-    func collect(_ out: inout [PilotMetricEntry]) {
-        out.append(PilotMetricEntry(.fps, Double(game.fps)))
-        out.append(PilotMetricEntry(.drawCalls, Double(renderer.drawCalls)))
+class GameMetrics: OpButtonMetricCollector {
+    func collect(_ out: inout [OpButtonMetricEntry]) {
+        out.append(OpButtonMetricEntry(.fps, Double(game.fps)))
+        out.append(OpButtonMetricEntry(.drawCalls, Double(renderer.drawCalls)))
     }
 }
 
-Pilot.getMetrics().addCollector(GameMetrics())
+OpButton.getMetrics().addCollector(GameMetrics())
 ```
 
 ## License
