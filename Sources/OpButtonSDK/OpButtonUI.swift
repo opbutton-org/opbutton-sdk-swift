@@ -26,9 +26,9 @@ public final class OpButtonUI {
 
     @discardableResult
     public func addTab(_ title: String) -> OpButtonTab {
+        let tab = OpButtonTab(ui: self, title: title)
         lock.lock()
         tabs.removeAll { $0.title == title }
-        let tab = OpButtonTab(ui: self, title: title)
         tabs.append(tab)
         revision += 1
         lock.unlock()

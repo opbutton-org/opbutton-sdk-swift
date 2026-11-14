@@ -1,5 +1,9 @@
 import Foundation
+#if canImport(LiveKit)
+import LiveKit
+#else
 import LiveKitClient
+#endif
 #if os(iOS)
 import Combine
 #endif
@@ -244,13 +248,17 @@ final class OpButtonLiveKitPublisher {
             options: createPublishOptions(quality: quality)
         )
 
+        storeScreenShareState(track: track, publication: publication, quality: quality)
+
+        return true
+    }
+
+    private func storeScreenShareState(track: LocalVideoTrack, publication: LocalTrackPublication, quality: LiveQuality) {
         lock.lock()
+        defer { lock.unlock() }
         screenShareTrack = track
         screenSharePublication = publication
         currentQuality = quality
-        lock.unlock()
-
-        return true
     }
 
     private func replaceScreenShareTrack(on activeRoom: Room, quality: LiveQuality) async throws -> Bool {

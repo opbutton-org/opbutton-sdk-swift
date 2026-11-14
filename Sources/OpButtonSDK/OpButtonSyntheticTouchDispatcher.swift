@@ -144,17 +144,13 @@ enum OpButtonSyntheticTouchDispatcher {
     private static func applicationWindows() -> [UIWindow] {
         let application = UIApplication.shared
 
-        if #available(iOS 13.0, *) {
-            return application.connectedScenes
-                .compactMap { $0 as? UIWindowScene }
-                .filter {
-                    $0.activationState == .foregroundActive ||
-                    $0.activationState == .foregroundInactive
-                }
-                .flatMap { $0.windows }
-        }
-
-        return application.windows
+        return application.connectedScenes
+            .compactMap { $0 as? UIWindowScene }
+            .filter {
+                $0.activationState == .foregroundActive ||
+                $0.activationState == .foregroundInactive
+            }
+            .flatMap { $0.windows }
     }
 
     private static func sendEvent(with touches: [SyntheticTouch]) -> Bool {

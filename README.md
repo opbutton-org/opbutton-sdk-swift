@@ -13,10 +13,23 @@ Lightweight Swift SDK for connecting iOS applications to the **OpButton** remote
 ## Requirements
 
 - iOS 13.0+ / macOS 10.15+
-- Swift 5.9+
-- Xcode 15+
+- Swift 6.2+
+- Xcode 26+
 
 ## Installation
+
+### SwiftPods / Swift Package Manager
+
+```ruby
+platform :ios, '13.0'
+
+target 'MyApp' do
+    spm 'OpButtonSDK', '1.0.60', git: 'https://github.com/opbutton-org/opbutton-sdk-swift.git', products: ['OpButtonSDK']
+end
+```
+
+Run `swiftpods install`. `OpButtonSDK` links the official LiveKit 2.15.1 XCFramework package.
+The SwiftPods catalog also registers `OpButtonSDK` with the same repository and product name.
 
 ### CocoaPods
 
@@ -32,8 +45,8 @@ target "MyApp" do
 end
 ```
 
-`OpButtonSDK` still installs `LiveKitClient` `2.13.0` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
-The SDK is currently installed directly from this repository. The legacy CocoaPods spec publisher has been retired; SwiftPods packaging will be configured separately. The LiveKit spec source is still required.
+`OpButtonSDK` still installs `LiveKitClient` `2.15.1` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
+The legacy CocoaPods spec publisher has been retired. For CocoaPods, install directly from this repository and retain the LiveKit spec source.
 
 ## Quick Start
 
@@ -153,3 +166,7 @@ OpButton.getMetrics().addCollector(GameMetrics())
 ## License
 
 See [LICENSE](../LICENSE) for details.
+
+## Objective-C command tabs
+
+`OpButtonBridge.createCommandTab(_:title:)` returns an `OpButtonCommandTab` for Objective-C hosts. Add command buttons with `addButton(_:title:onClick:)`. Call `close()` before the host releases its handlers; it removes the tab and unregisters its callbacks. Create and close command tabs on the main thread, where SDK actions are dispatched.

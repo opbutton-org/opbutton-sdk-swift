@@ -279,6 +279,15 @@ public class OpButtonBridge: NSObject {
 
     public static let sdkVersion: String = OpButton.version
 
+    public static func isInitialized() -> Bool {
+        return OpButton.isInitialized
+    }
+
+    public static func createCommandTab(_ identifier: String, title: String) -> OpButtonCommandTab? {
+        guard OpButton.isInitialized else { return nil }
+        return OpButtonCommandTab(ui: OpButton.getUI(), identifier: identifier, title: title)
+    }
+
     public static func initialize(_ config: OpButtonConfig) {
         OpButton.initialize(config)
     }
