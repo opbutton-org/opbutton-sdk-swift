@@ -1,21 +1,27 @@
 import Foundation
 
-final class OpButtonHttpClient {
+final class OpButtonHttpClient: OpButtonPollTransport {
     private let baseUrl: String
     private let apiToken: String
     private let session: URLSession
+    private let sessionLock = NSLock()
+    private var closed = false
 
-    init(baseUrl: String, apiToken: String) {
+    init(baseUrl: String, apiToken: String, configuration: URLSessionConfiguration = .default) {
         self.baseUrl = baseUrl
         self.apiToken = apiToken
 
-        let config = URLSessionConfiguration.default
+        let config = configuration
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
         self.session = URLSession(configuration: config)
     }
 
     func shutdown() {
+        sessionLock.lock()
+        defer { sessionLock.unlock() }
+        guard !closed else { return }
+        closed = true
         session.invalidateAndCancel()
     }
 
@@ -166,6 +172,12 @@ final class OpButtonHttpClient {
 
     // MARK: - Internal
 
+    private final class ResponseBox: @unchecked Sendable {
+        var data: Data?
+        var http: HTTPURLResponse?
+        var error: Error?
+    }
+
     @discardableResult
     private func executeSync(path: String, method: String,
                              body: [String: Any]?,
@@ -183,34 +195,40 @@ final class OpButtonHttpClient {
             request.httpBody = try JSONSerialization.data(withJSONObject: body)
         }
 
-        var responseData: Data?
-        var responseHTTP: HTTPURLResponse?
-        var responseError: Error?
+        let result = ResponseBox()
 
         let semaphore = DispatchSemaphore(value: 0)
 
+        // URLSession raises an Objective-C exception for task creation after invalidation.
+        // Serialize acquiring a task with closing its owning session.
+        sessionLock.lock()
+        guard !closed else {
+            sessionLock.unlock()
+            throw OpButtonError("HTTP client is shut down")
+        }
         let task = session.dataTask(with: request) { data, response, error in
-            responseData = data
-            responseHTTP = response as? HTTPURLResponse
-            responseError = error
+            result.data = data
+            result.http = response as? HTTPURLResponse
+            result.error = error
             semaphore.signal()
         }
+        sessionLock.unlock()
         task.resume()
         semaphore.wait()
 
-        if let error = responseError {
+        if let error = result.error {
             throw OpButtonError("Network error: \(error.localizedDescription)", cause: error)
         }
 
-        guard let httpResponse = responseHTTP else {
+        guard let httpResponse = result.http else {
             throw OpButtonError("No HTTP response")
         }
 
-        let bodyString = responseData.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        let bodyString = result.data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
 
         guard (200...299).contains(httpResponse.statusCode) else {
             var detail = bodyString
-            if let data = responseData,
+            if let data = result.data,
                let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
                let d = errorJson["detail"] as? String {
                 detail = d
@@ -222,7 +240,7 @@ final class OpButtonHttpClient {
             return [:]
         }
 
-        guard let data = responseData,
+        guard let data = result.data,
               let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
             throw OpButtonError("Failed to parse server response")
         }

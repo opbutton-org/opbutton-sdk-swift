@@ -2,6 +2,8 @@
 
 Lightweight Swift SDK for connecting iOS applications to the **OpButton** remote debug dashboard.
 
+See [Architecture](docs/architecture.md) for runtime boundaries, delivery receipts, commands and shutdown ownership.
+
 ## Features
 
 - **Remote UI** — Declarative panel builder with widgets (buttons, switches, inputs, tables, etc.)
@@ -24,7 +26,7 @@ Lightweight Swift SDK for connecting iOS applications to the **OpButton** remote
 platform :ios, '13.0'
 
 target 'MyApp' do
-    spm 'OpButtonSDK', '1.0.60', git: 'https://github.com/opbutton-org/opbutton-sdk-swift.git', products: ['OpButtonSDK']
+    spm 'OpButtonSDK', '1.0.61', git: 'https://github.com/opbutton-org/opbutton-sdk-swift.git', products: ['OpButtonSDK']
 end
 ```
 

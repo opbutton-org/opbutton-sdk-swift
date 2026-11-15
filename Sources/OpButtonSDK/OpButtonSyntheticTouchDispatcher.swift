@@ -167,7 +167,7 @@ enum OpButtonSyntheticTouchDispatcher {
         let touchesEventSelector = NSSelectorFromString("_touchesEvent")
 
         guard application.responds(to: touchesEventSelector),
-              let event = OpButtonRuntime.objectReturn(target: application, selector: touchesEventSelector) as? UIEvent else {
+              let event = OpButtonObjectiveCRuntime.objectReturn(target: application, selector: touchesEventSelector) as? UIEvent else {
             return nil
         }
 
@@ -181,15 +181,15 @@ enum OpButtonSyntheticTouchDispatcher {
             return nil
         }
 
-        OpButtonRuntime.voidReturn(target: event, selector: clearSelector)
+        OpButtonObjectiveCRuntime.voidReturn(target: event, selector: clearSelector)
 
         if let hidEvent = createHidEvent(for: touches) {
-            OpButtonRuntime.voidReturn(target: event, selector: setHidEventSelector, pointer: hidEvent)
+            OpButtonObjectiveCRuntime.voidReturn(target: event, selector: setHidEventSelector, pointer: hidEvent)
             release(hidEvent)
         }
 
         for touch in touches {
-            OpButtonRuntime.voidReturn(target: event,
+            OpButtonObjectiveCRuntime.voidReturn(target: event,
                                     selector: addTouchSelector,
                                     object: touch.touch,
                                     bool: false)
@@ -313,18 +313,18 @@ enum OpButtonSyntheticTouchDispatcher {
             let hidEventSelector = NSSelectorFromString("_setHidEvent:")
 
             if touch.responds(to: timestampSelector) {
-                OpButtonRuntime.voidReturn(target: touch,
+                OpButtonObjectiveCRuntime.voidReturn(target: touch,
                                         selector: timestampSelector,
                                         timeInterval: ProcessInfo.processInfo.systemUptime)
             }
 
             if touch.responds(to: phaseSelector) {
-                OpButtonRuntime.voidReturn(target: touch, selector: phaseSelector, integer: newPhase.rawValue)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: phaseSelector, integer: newPhase.rawValue)
             }
 
             if touch.responds(to: hidEventSelector),
                let hidEvent = createHidEvent(for: [self]) {
-                OpButtonRuntime.voidReturn(target: touch, selector: hidEventSelector, pointer: hidEvent)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: hidEventSelector, pointer: hidEvent)
                 release(hidEvent)
             }
         }
@@ -351,33 +351,33 @@ enum OpButtonSyntheticTouchDispatcher {
                 return false
             }
 
-            OpButtonRuntime.voidReturn(target: touch, selector: setWindowSelector, object: window)
-            OpButtonRuntime.voidReturn(target: touch, selector: setTapCountSelector, unsignedInteger: 1)
-            OpButtonRuntime.voidReturn(target: touch, selector: setLocationSelector, point: point, bool: true)
-            OpButtonRuntime.voidReturn(target: touch, selector: setViewSelector, object: hitView)
-            OpButtonRuntime.voidReturn(target: touch,
+            OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setWindowSelector, object: window)
+            OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setTapCountSelector, unsignedInteger: 1)
+            OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setLocationSelector, point: point, bool: true)
+            OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setViewSelector, object: hitView)
+            OpButtonObjectiveCRuntime.voidReturn(target: touch,
                                     selector: setTimestampSelector,
                                     timeInterval: ProcessInfo.processInfo.systemUptime)
-            OpButtonRuntime.voidReturn(target: touch, selector: setPhaseSelector, integer: phase.rawValue)
+            OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setPhaseSelector, integer: phase.rawValue)
 
             if touch.responds(to: setIsTapSelector) {
-                OpButtonRuntime.voidReturn(target: touch, selector: setIsTapSelector, bool: true)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setIsTapSelector, bool: true)
             }
 
             if touch.responds(to: setGestureViewSelector) {
-                OpButtonRuntime.voidReturn(target: touch, selector: setGestureViewSelector, object: hitView)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setGestureViewSelector, object: hitView)
             }
 
             if touch.responds(to: setFirstTouchSelector) {
-                OpButtonRuntime.voidReturn(target: touch, selector: setFirstTouchSelector, bool: true)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setFirstTouchSelector, bool: true)
             } else if touch.responds(to: setTapToClickSelector) {
-                OpButtonRuntime.voidReturn(target: touch, selector: setTapToClickSelector, bool: true)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setTapToClickSelector, bool: true)
                 setFirstTouchFlag()
             }
 
             if touch.responds(to: setHidEventSelector),
                let hidEvent = createHidEvent(for: [self]) {
-                OpButtonRuntime.voidReturn(target: touch, selector: setHidEventSelector, pointer: hidEvent)
+                OpButtonObjectiveCRuntime.voidReturn(target: touch, selector: setHidEventSelector, pointer: hidEvent)
                 release(hidEvent)
             }
 
@@ -399,7 +399,7 @@ enum OpButtonSyntheticTouchDispatcher {
     }
 }
 
-private enum OpButtonRuntime {
+private enum OpButtonObjectiveCRuntime {
     static func objectReturn(target: NSObject, selector: Selector) -> AnyObject? {
         typealias Function = @convention(c) (AnyObject, Selector) -> Unmanaged<AnyObject>?
         let implementation = target.method(for: selector)

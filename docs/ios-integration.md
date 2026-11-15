@@ -16,7 +16,7 @@ target "MyApp" do
 end
 ```
 
-`OpButtonSDK` still pulls `LiveKitClient` `2.13.0` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
+`OpButtonSDK` still pulls `LiveKitClient` `2.15.1` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
 The SDK is currently installed directly from this repository. The legacy CocoaPods spec publisher has been retired; SwiftPods packaging will be configured separately. The LiveKit spec source is still required.
 
 ## Basic Setup
@@ -153,3 +153,9 @@ OpButton.disconnect()
 // After this, initialize() can be called again
 OpButton.shutdown()
 ```
+
+## Execution and delivery
+
+Build and modify panel widgets on the main thread. The SDK reads widget providers and captures detached panel snapshots on that same thread. Action callbacks and session lifecycle callbacks are delivered on the main thread.
+
+An accepted panel request acknowledges its captured revision. Edits made during the request remain pending. Session attribute snapshots are committed only after the server accepts the poll. Recovery polls process returned commands normally and leave metric sampling running.

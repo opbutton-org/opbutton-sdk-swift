@@ -120,9 +120,9 @@ public final class OpButtonUI {
         return revision != sentRevision
     }
 
-    func markSent() {
+    func markSent(_ revision: Int) {
         lock.lock()
-        sentRevision = revision
+        sentRevision = max(sentRevision, revision)
         lock.unlock()
     }
 
@@ -139,6 +139,10 @@ public final class OpButtonUI {
     }
 
     // MARK: - Serialization
+
+    func snapshot() -> OpButtonPanelSnapshot? {
+        return OpButtonPanelSnapshot(toJson())
+    }
 
     func toJson() -> [String: Any] {
         lock.lock()
