@@ -4,7 +4,7 @@ import UIKit
 #endif
 
 public final class OpButton {
-    public static let version = "1.0.64"
+    public static let version = "1.0.65"
 
     private static var instance: OpButtonRuntime?
     private static let instanceLock = NSLock()

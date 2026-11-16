@@ -3,6 +3,7 @@ import Foundation
 final class OpButtonHttpClient: OpButtonPollTransport {
     private let baseUrl: String
     private let apiToken: String
+    private let runId = UUID().uuidString
     private let session: URLSession
     private let sessionLock = NSLock()
     private var closed = false
@@ -31,7 +32,8 @@ final class OpButtonHttpClient: OpButtonPollTransport {
                  sessionAttributes: [String: Any]) throws -> OpButtonConnectResponse {
         var body: [String: Any] = [
             "device_id": deviceId,
-            "device_name": deviceName
+            "device_name": deviceName,
+            "run_id": runId
         ]
 
         if !sessionAttributes.isEmpty {
@@ -51,7 +53,7 @@ final class OpButtonHttpClient: OpButtonPollTransport {
 
     func pollStatus(requestId: String) throws -> OpButtonConnectResponse {
         let json = try executeSync(
-            path: "/api/client/poll-status/\(requestId)",
+            path: "/api/client/poll-status/\(requestId)?run_id=\(runId)",
             method: "GET",
             body: nil,
             token: apiToken,
