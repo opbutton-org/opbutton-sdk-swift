@@ -1,8 +1,6 @@
 import Foundation
 
-public class OpButtonWidget {
-    let ui: OpButtonUI
-    let internalId: Int
+public class OpButtonWidget: OpButtonElement {
     public private(set) var id: String
     public let type: String
     var json: [String: Any]
@@ -12,10 +10,11 @@ public class OpButtonWidget {
     private var cachedValue: String?
 
     init(ui: OpButtonUI, type: String) {
-        self.ui = ui
-        self.internalId = ui.nextId()
-        self.id = "\(type)-\(internalId)"
+        self.id = ""
         self.type = type
+        self.json = [:]
+        super.init(ui: ui)
+        self.id = "\(type)-\(internalId)"
         self.json = [
             "type": type,
             "id": internalId
@@ -59,7 +58,9 @@ public class OpButtonWidget {
         return false
     }
 
+    override func detach() { ui.unregisterProvider(self); super.detach() }
+
     func toJson() -> [String: Any] {
-        return json
+        return decorate(json)
     }
 }

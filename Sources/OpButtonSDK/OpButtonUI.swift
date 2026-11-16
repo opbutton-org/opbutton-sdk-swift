@@ -28,10 +28,12 @@ public final class OpButtonUI {
     public func addTab(_ title: String) -> OpButtonTab {
         let tab = OpButtonTab(ui: self, title: title)
         lock.lock()
+        let removed = tabs.filter { $0.title == title }
         tabs.removeAll { $0.title == title }
         tabs.append(tab)
         revision += 1
         lock.unlock()
+        removed.forEach { $0.detach() }
         return tab
     }
 
@@ -43,9 +45,11 @@ public final class OpButtonUI {
 
     public func removeTab(_ id: String) {
         lock.lock()
+        let removed = tabs.filter { $0.id == id }
         tabs.removeAll { $0.id == id }
         revision += 1
         lock.unlock()
+        removed.forEach { $0.detach() }
     }
 
     // MARK: - Widget Callbacks

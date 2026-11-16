@@ -27,6 +27,8 @@ public final class OpButtonTab {
     @discardableResult
     public func vertical() -> OpButtonLayout {
         let l = OpButtonLayout(ui: ui, direction: .vertical)
+        layout?.detach()
+        ui.incrementRevision()
         layout = l
         return l
     }
@@ -34,9 +36,22 @@ public final class OpButtonTab {
     @discardableResult
     public func horizontal() -> OpButtonLayout {
         let l = OpButtonLayout(ui: ui, direction: .horizontal)
+        layout?.detach()
+        ui.incrementRevision()
         layout = l
         return l
     }
+
+    @discardableResult
+    public func grid() -> OpButtonLayout {
+        let child = OpButtonLayout(ui: ui, direction: .grid)
+        layout?.detach()
+        ui.incrementRevision()
+        layout = child
+        return child
+    }
+
+    func detach() { layout?.detach() }
 
     func toJson() -> [String: Any] {
         var json: [String: Any] = [

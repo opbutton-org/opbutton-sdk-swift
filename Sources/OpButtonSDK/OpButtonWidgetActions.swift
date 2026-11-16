@@ -44,3 +44,25 @@ public final class OpButtonTextareaAction {
         self.value = action.payload?["value"] as? String ?? ""
     }
 }
+
+
+public final class OpButtonRadioGroupAction {
+    public let action: OpButtonAction
+    public let value: String
+
+    init(_ action: OpButtonAction) {
+        self.action = action
+        self.value = action.payload?["value"] as? String ?? ""
+    }
+}
+
+
+public final class OpButtonSliderAction {
+    public let action: OpButtonAction
+    public let value: Double
+
+    init(_ action: OpButtonAction) {
+        self.action = action
+        self.value = action.payload?["value"] as? Double ?? 0
+    }
+}
