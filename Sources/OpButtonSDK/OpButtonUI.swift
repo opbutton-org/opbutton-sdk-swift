@@ -25,15 +25,34 @@ public final class OpButtonUI {
     // MARK: - Tab Management
 
     @discardableResult
-    public func addTab(_ title: String) -> OpButtonTab {
-        let tab = OpButtonTab(ui: self, title: title)
+    public func addTab(_ id: String) -> OpButtonTab {
+        let tab = OpButtonTab(ui: self, identifier: id)
         lock.lock()
-        let removed = tabs.filter { $0.title == title }
-        tabs.removeAll { $0.title == title }
+        let removed = tabs.filter { $0.id == id }
+        tabs.removeAll { $0.id == id }
         tabs.append(tab)
         revision += 1
         lock.unlock()
         removed.forEach { $0.detach() }
+        return tab
+    }
+
+    @discardableResult
+    public func getOrCreateTab(_ id: String) -> OpButtonTab {
+        if let tab = getTab(id) {
+            return tab
+        }
+
+        let tab = OpButtonTab(ui: self, identifier: id)
+        lock.lock()
+        defer { lock.unlock() }
+
+        if let existing = tabs.first(where: { $0.id == id }) {
+            return existing
+        }
+
+        tabs.append(tab)
+        revision += 1
         return tab
     }
 

@@ -11,10 +11,10 @@ public final class OpButtonCommandTab: NSObject {
     private var closed = false
 
     init(ui: OpButtonUI, identifier: String, title: String) {
-        let tab = ui.addTab(title).setId(identifier)
+        let tab = ui.getOrCreateTab(identifier).setName(title)
         self.ui = ui
         self.tab = tab
-        self.layout = tab.horizontal()
+        self.layout = tab.getLayout() ?? tab.horizontal()
         super.init()
     }
 

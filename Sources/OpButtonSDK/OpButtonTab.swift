@@ -4,19 +4,26 @@ public final class OpButtonTab {
     private let ui: OpButtonUI
     private let internalId: Int
     public private(set) var id: String
-    public let title: String
+    public private(set) var title: String
     private var layout: OpButtonLayout?
 
-    init(ui: OpButtonUI, title: String) {
+    init(ui: OpButtonUI, identifier: String) {
         self.ui = ui
         self.internalId = ui.nextId()
-        self.id = "tab-\(internalId)"
-        self.title = title
+        self.id = identifier
+        self.title = identifier
     }
 
     @discardableResult
     public func setId(_ id: String) -> OpButtonTab {
         self.id = id
+        return self
+    }
+
+    @discardableResult
+    public func setName(_ name: String) -> OpButtonTab {
+        title = name
+        ui.incrementRevision()
         return self
     }
 

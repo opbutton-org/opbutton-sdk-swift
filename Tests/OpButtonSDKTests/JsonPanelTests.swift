@@ -4,7 +4,7 @@ import XCTest
 final class JsonPanelTests: XCTestCase {
     func testJSONPreservesPropertiesAndNativeBuilders() throws {
         let ui = OpButtonUI()
-        let tab = ui.addTab("JSON").setId("json")
+        let tab = ui.addTab("json").setName("JSON")
         let description: [String: Any] = [
             "type": "layout", "direction": "grid", "gridColumns": 3, "gap": 8,
             "placement": ["width": "fill", "weight": 2], "future": ["enabled": true],

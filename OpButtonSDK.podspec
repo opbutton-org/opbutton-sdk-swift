@@ -1,6 +1,6 @@
 Pod::Spec.new do |s|
   s.name             = 'OpButtonSDK'
-  s.version          = '1.0.63'
+  s.version          = '1.0.64'
   s.summary          = 'OpButton remote debugging SDK for iOS'
   s.description      = <<-DESC
     OpButtonSDK provides real-time remote debugging, logging, metrics collection,
