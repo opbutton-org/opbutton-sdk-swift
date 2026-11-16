@@ -43,12 +43,13 @@ source "https://github.com/opbutton-org/opbutton-sdk-swift-podspecs.git"
 platform :ios, "13.0"
 
 target "MyApp" do
-    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :branch => "main"
+    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :tag => "<reviewed-release-tag>"
 end
 ```
 
 `OpButtonSDK` still installs `LiveKitClient` `2.15.1` transitively, so you do not need a separate `pod "LiveKitClient"` entry.
 The legacy CocoaPods spec publisher has been retired. For CocoaPods, install directly from this repository and retain the LiveKit spec source.
+Pin an immutable reviewed tag; do not install a moving branch in production.
 
 ## Quick Start
 
@@ -144,6 +145,12 @@ class MySessionHandler: OpButtonSessionListener {
 
 OpButton.addSessionListener(MySessionHandler())
 ```
+
+## Device credential and HTTPS
+
+The SDK generates a high-entropy credential per installation and stores it in Keychain. On iOS-family platforms it uses a `ThisDeviceOnly` accessibility class, so backup restoration cannot clone an approved installation onto another device. The server stores only the credential's SHA-256 digest. Use `setDeviceSecret(...)` only when the host already provisions a 32–256 character printable-ASCII value from equivalent secure storage.
+
+Production URLs must use HTTPS and may not contain credentials, a query, or a fragment. Loopback HTTP requires an explicit `setAllowInsecureLocalhost(true)`. Existing approved devices require one dashboard re-approval when upgraded to the credential-aware protocol.
 
 ## Metrics
 

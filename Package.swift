@@ -12,7 +12,8 @@ let package = Package(
         .target(
             name: "OpButtonSDK",
             dependencies: [.product(name: "LiveKit", package: "client-sdk-swift-xcframework")],
-            path: "Sources/OpButtonSDK"
+            path: "Sources/OpButtonSDK",
+            linkerSettings: [.linkedFramework("Security"), .linkedFramework("CryptoKit")]
         ),
         .testTarget(name: "OpButtonSDKTests", dependencies: ["OpButtonSDK"])
     ],

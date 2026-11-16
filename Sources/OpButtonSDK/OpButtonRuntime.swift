@@ -7,6 +7,7 @@ import UIKit
 final class OpButtonRuntime {
     private let config: OpButtonConfig
     private let httpClient: OpButtonHttpClient
+    private let credentialStore = OpButtonDeviceCredentialStore()
     let telemetry: OpButtonTelemetry
     private let hostState: OpButtonHostState
     private lazy var delivery = OpButtonPollDelivery(
@@ -271,8 +272,15 @@ final class OpButtonRuntime {
         #endif
 
         let attributes = hostState.resolveAllSessionAttributes()
+        let deviceSecret = try credentialStore.getOrCreate(
+            baseUrl: config.baseUrl, deviceId: deviceId, configured: config.deviceSecret)
+        try httpClient.setDeviceSecret(deviceSecret)
         let resp = try httpClient.connect(deviceId: deviceId, deviceName: deviceName,
                                           sessionAttributes: attributes)
+        if let replacement = resp.deviceSecret {
+            try httpClient.setDeviceSecret(replacement)
+            try credentialStore.save(baseUrl: config.baseUrl, deviceId: deviceId, value: replacement)
+        }
         hostState.acknowledgeAll(attributes)
 
         lock.lock()

@@ -14,6 +14,8 @@ public final class OpButtonConfig {
     public let sessionAttributes: OpButtonSessionAttributes
     public let logConfig: OpButtonLogConfig
     public let metricConfig: OpButtonMetricConfig
+    public let deviceSecret: String?
+    public let allowInsecureLocalhost: Bool
 
     private init(_ builder: Builder) {
         self.baseUrl = builder.baseUrl
@@ -29,6 +31,8 @@ public final class OpButtonConfig {
         self.sessionAttributes = builder.sessionAttributes
         self.logConfig = builder.logConfig
         self.metricConfig = builder.metricConfig
+        self.deviceSecret = builder.deviceSecret
+        self.allowInsecureLocalhost = builder.allowInsecureLocalhost
     }
 
     public final class Builder {
@@ -45,6 +49,8 @@ public final class OpButtonConfig {
         fileprivate var sessionAttributes = OpButtonSessionAttributes()
         fileprivate var logConfig = OpButtonLogConfig()
         fileprivate var metricConfig = OpButtonMetricConfig()
+        fileprivate var deviceSecret: String?
+        fileprivate var allowInsecureLocalhost = false
 
         public init(_ baseUrl: String, _ apiToken: String) {
             self.baseUrl = baseUrl.hasSuffix("/") ? String(baseUrl.dropLast()) : baseUrl
@@ -60,6 +66,18 @@ public final class OpButtonConfig {
         @discardableResult
         public func setDeviceName(_ deviceName: String) -> Builder {
             self.deviceName = deviceName
+            return self
+        }
+
+        @discardableResult
+        public func setDeviceSecret(_ deviceSecret: String) -> Builder {
+            self.deviceSecret = deviceSecret
+            return self
+        }
+
+        @discardableResult
+        public func setAllowInsecureLocalhost(_ allow: Bool) -> Builder {
+            self.allowInsecureLocalhost = allow
             return self
         }
 
@@ -119,8 +137,32 @@ public final class OpButtonConfig {
 
         public func build() -> OpButtonConfig {
             precondition(!baseUrl.isEmpty, "baseUrl is required")
-            precondition(!apiToken.isEmpty, "apiToken is required")
+            precondition(!apiToken.isEmpty && Self.isSafeHeaderValue(apiToken),
+                         "apiToken is required and must contain only printable ASCII characters")
+            precondition((250...300000).contains(pollIntervalMs)
+                && (250...300000).contains(actionPollIntervalMs),
+                "poll intervals must be between 250ms and 300000ms")
+            precondition(deviceSecret == nil || ((32...256).contains(deviceSecret!.count)
+                && Self.isSafeHeaderValue(deviceSecret!)),
+                "deviceSecret must contain 32 to 256 printable ASCII characters")
+            guard let components = URLComponents(string: baseUrl),
+                  let scheme = components.scheme?.lowercased(),
+                  let host = components.host?.lowercased(),
+                  components.user == nil, components.password == nil,
+                  components.query == nil, components.fragment == nil else {
+                preconditionFailure("baseUrl is invalid or contains credentials")
+            }
+            let local = host == "localhost" || host == "127.0.0.1" || host == "::1"
+                || host == "[::1]"
+            precondition(scheme == "https" || (allowInsecureLocalhost && scheme == "http" && local),
+                         "baseUrl must use HTTPS; localhost HTTP requires setAllowInsecureLocalhost(true)")
             return OpButtonConfig(self)
+        }
+
+        private static func isSafeHeaderValue(_ value: String) -> Bool {
+            !value.unicodeScalars.isEmpty && value.unicodeScalars.allSatisfy {
+                (0x21...0x7e).contains($0.value)
+            }
         }
     }
 }

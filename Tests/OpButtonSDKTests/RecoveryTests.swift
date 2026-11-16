@@ -109,7 +109,7 @@ final class RecoveryTests: XCTestCase {
         scenario.acceptedAttributes = { attributes.fulfill() }
         let listener = Listener(scenario)
         let config = OpButtonConfig.Builder("https://opbutton.invalid", "test")
-            .setAutoConnect(false).setDeviceId("test-device").setDeviceName("Test").setActionPollIntervalMs(100)
+            .setAutoConnect(false).setDeviceId("test-device").setDeviceName("Test").setActionPollIntervalMs(250)
             .setSessionListener(listener)
             .setSessionAttributes(OpButtonSessionAttributes().putProvider("level") { scenario.getLevel() })
             .setMetricConfig(OpButtonMetricConfig().setSampleIntervalMs(100).addCollector(Collector(scenario)))

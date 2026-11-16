@@ -12,12 +12,13 @@ source "https://github.com/opbutton-org/opbutton-sdk-swift-podspecs.git"
 platform :ios, "13.0"
 
 target "MyApp" do
-    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :branch => "main"
+    pod "OpButtonSDK", :git => "https://github.com/opbutton-org/opbutton-sdk-swift.git", :tag => "<reviewed-release-tag>"
 end
 ```
 
 `OpButtonSDK` still pulls `LiveKitClient` `2.15.1` transitively, so you do not need to add a separate `pod "LiveKitClient"` line.
 The SDK is currently installed directly from this repository. The legacy CocoaPods spec publisher has been retired; SwiftPods packaging will be configured separately. The LiveKit spec source is still required.
+Use an immutable reviewed tag rather than a moving branch in production.
 
 ## Basic Setup
 
@@ -41,6 +42,12 @@ OpButton.initialize(config)
 ```
 
 If `deviceId` or `deviceName` are not set, the SDK auto-detects them from `UIDevice`.
+
+The URL must use HTTPS and may not contain credentials, a query, or a fragment. For local loopback development only, opt in with `setAllowInsecureLocalhost(true)`.
+
+The SDK creates a random per-installation credential and stores it in Keychain. On iOS-family platforms the item is `ThisDeviceOnly`, so it is not migrated to a different device through backup. The server stores only its SHA-256 digest. If the host already has equivalent secure storage, it may provide a 32–256 character printable-ASCII value with `setDeviceSecret(...)`.
+
+After the server migration enables installation credentials, an existing approved device must be explicitly re-approved once.
 
 ## Live Input
 

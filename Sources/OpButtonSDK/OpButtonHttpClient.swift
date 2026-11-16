@@ -5,8 +5,88 @@ final class OpButtonHttpClient: OpButtonPollTransport {
     private let apiToken: String
     private let runId = UUID().uuidString
     private let session: URLSession
+    private let sessionDelegate: BoundedSessionDelegate
     private let sessionLock = NSLock()
     private var closed = false
+    private var deviceSecret = UUID().uuidString + UUID().uuidString
+    private static let maxResponseBytes = 2 * 1024 * 1024
+
+    private final class ResponseBox: @unchecked Sendable {
+        var data = Data()
+        var http: HTTPURLResponse?
+        var error: Error?
+        let semaphore = DispatchSemaphore(value: 0)
+    }
+
+    private final class BoundedSessionDelegate: NSObject, URLSessionDataDelegate,
+                                                @unchecked Sendable {
+        private let maxResponseBytes: Int
+        private let lock = NSLock()
+        private var responses: [Int: ResponseBox] = [:]
+
+        init(maxResponseBytes: Int) {
+            self.maxResponseBytes = maxResponseBytes
+        }
+
+        func register(_ task: URLSessionTask, response: ResponseBox) {
+            lock.lock()
+            responses[task.taskIdentifier] = response
+            lock.unlock()
+        }
+
+        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                        didReceive response: URLResponse,
+                        completionHandler: @escaping (URLSession.ResponseDisposition) -> Void) {
+            lock.lock()
+            let box = responses[dataTask.taskIdentifier]
+            box?.http = response as? HTTPURLResponse
+            let tooLarge = response.expectedContentLength > Int64(maxResponseBytes)
+            if tooLarge {
+                box?.error = OpButtonError("Server response exceeds 2 MiB")
+            }
+            lock.unlock()
+            completionHandler(tooLarge ? .cancel : .allow)
+        }
+
+        func urlSession(_ session: URLSession, dataTask: URLSessionDataTask,
+                        didReceive data: Data) {
+            lock.lock()
+            guard let box = responses[dataTask.taskIdentifier] else {
+                lock.unlock()
+                dataTask.cancel()
+                return
+            }
+            if box.data.count > maxResponseBytes - data.count {
+                box.error = OpButtonError("Server response exceeds 2 MiB")
+                lock.unlock()
+                dataTask.cancel()
+                return
+            }
+            box.data.append(data)
+            lock.unlock()
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask,
+                        didCompleteWithError error: Error?) {
+            lock.lock()
+            guard let box = responses.removeValue(forKey: task.taskIdentifier) else {
+                lock.unlock()
+                return
+            }
+            if box.error == nil {
+                box.error = error
+            }
+            lock.unlock()
+            box.semaphore.signal()
+        }
+
+        func urlSession(_ session: URLSession, task: URLSessionTask,
+                        willPerformHTTPRedirection response: HTTPURLResponse,
+                        newRequest request: URLRequest,
+                        completionHandler: @escaping (URLRequest?) -> Void) {
+            completionHandler(nil)
+        }
+    }
 
     init(baseUrl: String, apiToken: String, configuration: URLSessionConfiguration = .default) {
         self.baseUrl = baseUrl
@@ -15,7 +95,9 @@ final class OpButtonHttpClient: OpButtonPollTransport {
         let config = configuration
         config.timeoutIntervalForRequest = 15
         config.timeoutIntervalForResource = 30
-        self.session = URLSession(configuration: config)
+        let delegate = BoundedSessionDelegate(maxResponseBytes: Self.maxResponseBytes)
+        self.sessionDelegate = delegate
+        self.session = URLSession(configuration: config, delegate: delegate, delegateQueue: nil)
     }
 
     func shutdown() {
@@ -26,14 +108,38 @@ final class OpButtonHttpClient: OpButtonPollTransport {
         session.invalidateAndCancel()
     }
 
+    func setDeviceSecret(_ value: String) throws {
+        guard Self.isSafeDeviceSecret(value) else {
+            throw OpButtonError(
+                "Device credential must contain 32 to 256 printable ASCII characters")
+        }
+        sessionLock.lock()
+        deviceSecret = value
+        sessionLock.unlock()
+    }
+
+    private static func isSafeDeviceSecret(_ value: String) -> Bool {
+        (32...256).contains(value.count) && value.unicodeScalars.allSatisfy {
+            (0x21...0x7e).contains($0.value)
+        }
+    }
+
+    private func currentDeviceSecret() -> String {
+        sessionLock.lock()
+        defer { sessionLock.unlock() }
+        return deviceSecret
+    }
+
     // MARK: - Client Endpoints
 
     func connect(deviceId: String, deviceName: String,
                  sessionAttributes: [String: Any]) throws -> OpButtonConnectResponse {
+        let credential = currentDeviceSecret()
         var body: [String: Any] = [
             "device_id": deviceId,
             "device_name": deviceName,
-            "run_id": runId
+            "run_id": runId,
+            "device_secret": credential
         ]
 
         if !sessionAttributes.isEmpty {
@@ -52,12 +158,14 @@ final class OpButtonHttpClient: OpButtonPollTransport {
     }
 
     func pollStatus(requestId: String) throws -> OpButtonConnectResponse {
+        let credential = currentDeviceSecret()
         let json = try executeSync(
             path: "/api/client/poll-status/\(requestId)?run_id=\(runId)",
             method: "GET",
             body: nil,
             token: apiToken,
-            tokenHeader: "X-Api-Token"
+            tokenHeader: "X-Api-Token",
+            additionalHeaders: ["X-Device-Secret": credential]
         )
 
         return OpButtonConnectResponse.fromJson(json)
@@ -174,16 +282,11 @@ final class OpButtonHttpClient: OpButtonPollTransport {
 
     // MARK: - Internal
 
-    private final class ResponseBox: @unchecked Sendable {
-        var data: Data?
-        var http: HTTPURLResponse?
-        var error: Error?
-    }
-
     @discardableResult
     private func executeSync(path: String, method: String,
                              body: [String: Any]?,
-                             token: String, tokenHeader: String) throws -> [String: Any] {
+                             token: String, tokenHeader: String,
+                             additionalHeaders: [String: String] = [:]) throws -> [String: Any] {
         guard let url = URL(string: baseUrl + path) else {
             throw OpButtonError("Invalid URL: \(baseUrl + path)")
         }
@@ -191,6 +294,9 @@ final class OpButtonHttpClient: OpButtonPollTransport {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.setValue(token, forHTTPHeaderField: tokenHeader)
+        for (name, value) in additionalHeaders {
+            request.setValue(value, forHTTPHeaderField: name)
+        }
         request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
 
         if let body = body, method != "GET" {
@@ -199,8 +305,6 @@ final class OpButtonHttpClient: OpButtonPollTransport {
 
         let result = ResponseBox()
 
-        let semaphore = DispatchSemaphore(value: 0)
-
         // URLSession raises an Objective-C exception for task creation after invalidation.
         // Serialize acquiring a task with closing its owning session.
         sessionLock.lock()
@@ -208,15 +312,11 @@ final class OpButtonHttpClient: OpButtonPollTransport {
             sessionLock.unlock()
             throw OpButtonError("HTTP client is shut down")
         }
-        let task = session.dataTask(with: request) { data, response, error in
-            result.data = data
-            result.http = response as? HTTPURLResponse
-            result.error = error
-            semaphore.signal()
-        }
+        let task = session.dataTask(with: request)
+        sessionDelegate.register(task, response: result)
         sessionLock.unlock()
         task.resume()
-        semaphore.wait()
+        result.semaphore.wait()
 
         if let error = result.error {
             throw OpButtonError("Network error: \(error.localizedDescription)", cause: error)
@@ -226,12 +326,11 @@ final class OpButtonHttpClient: OpButtonPollTransport {
             throw OpButtonError("No HTTP response")
         }
 
-        let bodyString = result.data.flatMap { String(data: $0, encoding: .utf8) } ?? ""
+        let bodyString = String(data: result.data, encoding: .utf8) ?? ""
 
         guard (200...299).contains(httpResponse.statusCode) else {
             var detail = bodyString
-            if let data = result.data,
-               let errorJson = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+            if let errorJson = try? JSONSerialization.jsonObject(with: result.data) as? [String: Any],
                let d = errorJson["detail"] as? String {
                 detail = d
             }
@@ -242,8 +341,7 @@ final class OpButtonHttpClient: OpButtonPollTransport {
             return [:]
         }
 
-        guard let data = result.data,
-              let json = try? JSONSerialization.jsonObject(with: data) as? [String: Any] else {
+        guard let json = try? JSONSerialization.jsonObject(with: result.data) as? [String: Any] else {
             throw OpButtonError("Failed to parse server response")
         }
 
