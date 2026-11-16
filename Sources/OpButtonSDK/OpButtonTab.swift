@@ -51,6 +51,17 @@ public final class OpButtonTab {
         return child
     }
 
+    @discardableResult
+    public func setJson(_ description: [String: Any], onAction: OpButtonJsonCallback? = nil) throws -> OpButtonLayout {
+        let data = try JSONSerialization.data(withJSONObject: description)
+        guard let snapshot = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw OpButtonJsonError.invalidLayout }
+        let next = try OpButtonLayout.fromJson(ui: ui, description: snapshot, callback: onAction)
+        layout?.detach()
+        layout = next
+        ui.incrementRevision()
+        return next
+    }
+
     func detach() { layout?.detach() }
 
     func toJson() -> [String: Any] {

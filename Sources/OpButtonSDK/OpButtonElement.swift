@@ -38,6 +38,10 @@ public class OpButtonElement {
     @discardableResult public func maxWidth(_ pixels: Double) -> Self { place("maxWidth", Self.dimension(pixels, positive: true)) }
     @discardableResult public func alignSelf(_ value: String) -> Self { place("alignSelf", Self.alignment(value)) }
 
+    func loadPlacement(_ description: [String: Any]) {
+        placement = description["placement"] as? [String: Any] ?? [:]
+    }
+
     func detach() { ui.registerCallback(internalId, nil) }
 
     func decorate(_ json: [String: Any]) -> [String: Any] {

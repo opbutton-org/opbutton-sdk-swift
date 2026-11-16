@@ -129,6 +129,25 @@ public final class OpButtonLayout: OpButtonElement {
         return widget
     }
 
+    static func fromJson(ui: OpButtonUI, description: [String: Any], callback: OpButtonJsonCallback?) throws -> OpButtonLayout {
+        guard description["type"] as? String == "layout",
+              let value = description["direction"] as? String,
+              let direction = Direction(rawValue: value) else { throw OpButtonJsonError.invalidLayout }
+
+        let layout = OpButtonLayout(ui: ui, direction: direction)
+        layout.settings = description.filter { !["children", "id", "placement"].contains($0.key) }
+        layout.loadPlacement(description)
+
+        if let values = description["children"] {
+            guard let values = values as? [[String: Any]] else { throw OpButtonJsonError.invalidChildren }
+            let elements = try values.map { try OpButtonJsonElement(ui: ui, description: $0) }
+            layout.children = elements
+            elements.forEach { $0.attach(callback) }
+        }
+
+        return layout
+    }
+
     override func detach() { children.forEach { ($0 as? OpButtonElement)?.detach() }; super.detach() }
 
     func toJson() -> [String: Any] {
@@ -137,6 +156,7 @@ public final class OpButtonLayout: OpButtonElement {
         json["children"] = children.map { child -> [String: Any] in
             if let child = child as? OpButtonLayout { return child.toJson() }
             if let child = child as? OpButtonWidget { return child.toJson() }
+            if let child = child as? OpButtonJsonElement { return child.toJson() }
             if let child = child as? PaddingElement { return child.toJson() }
             if let child = child as? CollapsibleElement { return child.toJson() }
             preconditionFailure("Unknown layout child")

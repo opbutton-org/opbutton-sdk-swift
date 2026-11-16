@@ -6,7 +6,7 @@ import Foundation
 public final class OpButtonCommandTab: NSObject {
     private let ui: OpButtonUI
     private let tab: OpButtonTab
-    private let layout: OpButtonLayout
+    private var layout: OpButtonLayout
     private var callbackIds: [Int] = []
     private var closed = false
 
@@ -23,6 +23,16 @@ public final class OpButtonCommandTab: NSObject {
         let button = layout.addButton(title).setId(identifier)
         button.onClick { _ in onClick() }
         callbackIds.append(button.internalId)
+    }
+
+    public func setJson(_ description: String, onAction: @escaping (String, Any) -> Void) throws {
+        guard !closed else { return }
+        let data = Data(description.utf8)
+        guard let json = try JSONSerialization.jsonObject(with: data) as? [String: Any] else { throw OpButtonJsonError.invalidLayout }
+        layout = try tab.setJson(json) { identifier, action in
+            onAction(identifier, action.payload?["value"] ?? NSNull())
+        }
+        callbackIds.removeAll()
     }
 
     public func close() {
