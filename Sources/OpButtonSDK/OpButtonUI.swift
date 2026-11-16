@@ -52,12 +52,14 @@ public final class OpButtonUI {
 
     func registerCallback(_ widgetId: Int, _ callback: OpButtonWidgetCallback?) {
         lock.lock()
-        defer { lock.unlock() }
+        let previousCallback: OpButtonWidgetCallback?
         if let cb = callback {
-            callbacks[widgetId] = cb
+            previousCallback = callbacks.updateValue(cb, forKey: widgetId)
         } else {
-            callbacks.removeValue(forKey: widgetId)
+            previousCallback = callbacks.removeValue(forKey: widgetId)
         }
+        lock.unlock()
+        withExtendedLifetime(previousCallback) {}
     }
 
     func dispatchAction(_ action: OpButtonAction) -> Bool {

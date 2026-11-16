@@ -14,7 +14,7 @@ public final class OpButtonCommandTab: NSObject {
         let tab = ui.addTab(title).setId(identifier)
         self.ui = ui
         self.tab = tab
-        self.layout = tab.vertical()
+        self.layout = tab.horizontal()
         super.init()
     }
 
