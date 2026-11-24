@@ -26,7 +26,7 @@ See [Architecture](docs/architecture.md) for runtime boundaries, delivery receip
 platform :ios, '13.0'
 
 target 'MyApp' do
-    spm 'OpButtonSDK', '1.0.65', git: 'https://github.com/opbutton-org/opbutton-sdk-swift.git', products: ['OpButtonSDK']
+    spm 'OpButtonSDK', '1.0.66', git: 'https://github.com/opbutton-org/opbutton-sdk-swift.git', products: ['OpButtonSDK']
 end
 ```
 
